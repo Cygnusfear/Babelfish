@@ -1,33 +1,27 @@
 mod commands;
+mod config;
 mod model;
-mod prompts;
 mod translator;
 
 pub use commands::AppState;
-pub use model::LanguagePair;
-
 use std::sync::RwLock;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     dotenvy::dotenv().ok();
 
-    // Try to load from saved config first, fallback to env var
-    let api_key = commands::load_api_key();
-    let api_key = if api_key.is_empty() {
+    let app_config = config::load_config().unwrap_or_else(|error| {
+        eprintln!("Failed to load config: {error}");
+        config::AppConfig::default()
+    });
+
+    let api_key = if app_config.api_key.is_empty() {
         std::env::var("OPENROUTER_API_KEY").unwrap_or_default()
     } else {
-        api_key
+        app_config.api_key.clone()
     };
-    
-    let pairs = prompts::load_prompts().unwrap_or_else(|_| vec![
-        LanguagePair::new("es-en".to_string(), include_str!("../prompts/es-en.md").to_string()),
-        LanguagePair::new("pt-en".to_string(), include_str!("../prompts/pt-en.md").to_string()),
-    ]);
-
     let state = AppState {
         api_key: RwLock::new(api_key),
-        pairs,
     };
 
     tauri::Builder::default()

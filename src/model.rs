@@ -1,20 +1,27 @@
+use crate::config::LanguagePairConfig;
+
 #[derive(Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct LanguagePair {
     pub name: String,
     pub label: String,
+    pub from_lang: String,
+    pub to_lang: String,
     pub prompt: String,
 }
 
 impl LanguagePair {
-    pub fn new(name: String, prompt: String) -> Self {
-        let label = name
-            .replace('_', " ")
-            .split(' ')
-            .map(|s| s.to_uppercase())
-            .collect::<Vec<_>>()
-            .join(" ↔ ");
-        
-        Self { name, label, prompt }
+    pub fn from_config(config: &LanguagePairConfig, prompt_template: &str) -> Self {
+        let prompt = prompt_template
+            .replace("${from_lang}", &config.from_lang)
+            .replace("${to_lang}", &config.to_lang);
+
+        Self {
+            name: config.name.clone(),
+            label: config.label.clone(),
+            from_lang: config.from_lang.clone(),
+            to_lang: config.to_lang.clone(),
+            prompt,
+        }
     }
 }
 
@@ -71,24 +78,30 @@ impl Model {
         if row < self.chat_area_y || row >= self.chat_area_y + self.chat_area_height {
             return None;
         }
-        
+
         let mut line_count = 0u16;
-        let target_line = row.saturating_sub(self.chat_area_y).saturating_add(self.scroll);
-        
+        let target_line = row
+            .saturating_sub(self.chat_area_y)
+            .saturating_add(self.scroll);
+
         for (i, msg) in self.messages.iter().enumerate() {
-            let _hr_width = self.width.saturating_sub(if i % 2 == 0 { 6 } else { 14 }).max(10) as usize;
+            let _hr_width = self
+                .width
+                .saturating_sub(if i % 2 == 0 { 6 } else { 14 })
+                .max(10) as usize;
             line_count += 2;
-            
+
             let msg_lines: Vec<&str> = msg.lines().collect();
             let msg_line_count = msg_lines.len() as u16;
-            
-            if target_line >= line_count && target_line < line_count + msg_line_count && i % 2 == 1 {
+
+            if target_line >= line_count && target_line < line_count + msg_line_count && i % 2 == 1
+            {
                 return Some((i, msg.clone()));
             }
-            
+
             line_count += msg_line_count + 1;
         }
-        
+
         None
     }
 }

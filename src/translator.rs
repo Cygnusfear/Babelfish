@@ -3,7 +3,8 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 const OPENROUTER_URL: &str = "https://openrouter.ai/api/v1/chat/completions";
-const LLM_MODEL: &str = "google/gemini-2.5-flash";
+const APP_REFERER: &str = "https://github.com/cygnusfear/babeltauri";
+const APP_TITLE: &str = "Babelfish";
 
 #[derive(Serialize)]
 struct ChatMessage {
@@ -33,9 +34,14 @@ struct ResponseMessage {
     content: String,
 }
 
-pub async fn translate(api_key: &str, pair: &LanguagePair, text: &str) -> Result<String> {
+pub async fn translate(
+    api_key: &str,
+    model: &str,
+    pair: &LanguagePair,
+    text: &str,
+) -> Result<String> {
     let request = ChatRequest {
-        model: LLM_MODEL.to_string(),
+        model: model.to_string(),
         messages: vec![
             ChatMessage {
                 role: "system".to_string(),
@@ -54,6 +60,8 @@ pub async fn translate(api_key: &str, pair: &LanguagePair, text: &str) -> Result
         .post(OPENROUTER_URL)
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
+        .header("HTTP-Referer", APP_REFERER)
+        .header("X-Title", APP_TITLE)
         .json(&request)
         .send()
         .await
