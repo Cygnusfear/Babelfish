@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import ChatMessage from "./components/ChatMessage";
-import InputBox from "./components/InputBox";
 import Header from "./components/Header";
+import InputBox from "./components/InputBox";
 
 interface LanguagePair {
   name: string;
@@ -24,7 +24,7 @@ function App() {
   const [apiKey, setApiKey] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [messageIdCounter, setMessageIdCounter] = useState(0);
+  const nextMessageId = useRef(0);
 
   useEffect(() => {
     loadPairs();
@@ -33,12 +33,19 @@ function App() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isTranslating]);
+
+  const createMessage = (type: Message["type"], text: string): Message => {
+    const id = nextMessageId.current;
+    nextMessageId.current += 1;
+    return { type, text, id };
+  };
 
   const loadPairs = async () => {
     try {
       const languagePairs = await invoke<LanguagePair[]>("get_language_pairs");
       setPairs(languagePairs);
+      setCurrentPairIdx((idx) => (languagePairs[idx] ? idx : 0));
     } catch (error) {
       console.error("Failed to load language pairs:", error);
     }
@@ -48,42 +55,33 @@ function App() {
     try {
       const key = await invoke<string>("get_api_key");
       setApiKey(key);
-      if (!key) {
-        setShowSettings(true);
-      }
+      if (!key) setShowSettings(true);
     } catch (error) {
       console.error("Failed to load API key:", error);
     }
   };
 
   const handleTranslate = async (text: string) => {
-    if (!text.trim() || isTranslating || !pairs[currentPairIdx]) return;
+    const pair = pairs[currentPairIdx];
+    if (!text.trim() || isTranslating || !pair) return;
 
-    const userMsg: Message = { type: "user", text, id: messageIdCounter };
-    setMessageIdCounter((prev) => prev + 1);
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, createMessage("user", text)]);
     setIsTranslating(true);
 
     try {
       const translation = await invoke<string>("translate", {
-        pairName: pairs[currentPairIdx].name,
+        pairName: pair.name,
         text,
       });
-      const assistantMsg: Message = {
-        type: "assistant",
-        text: translation,
-        id: messageIdCounter + 1,
-      };
-      setMessageIdCounter((prev) => prev + 1);
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => [
+        ...prev,
+        createMessage("assistant", translation),
+      ]);
     } catch (error) {
-      const errorMsg: Message = {
-        type: "assistant",
-        text: `Error: ${error}`,
-        id: messageIdCounter + 1,
-      };
-      setMessageIdCounter((prev) => prev + 1);
-      setMessages((prev) => [...prev, errorMsg]);
+      setMessages((prev) => [
+        ...prev,
+        createMessage("assistant", `Error: ${error}`),
+      ]);
     } finally {
       setIsTranslating(false);
     }
@@ -99,12 +97,10 @@ function App() {
     }
   };
 
-  const handleClearChat = () => {
-    setMessages([]);
-  };
+  const handleClearChat = () => setMessages([]);
 
   return (
-    <div className="flex flex-col h-screen bg-base text-text p-3">
+    <div className="flex h-screen flex-col bg-base text-text">
       <Header
         onSettingsClick={() => setShowSettings(true)}
         onClearChat={handleClearChat}
@@ -113,48 +109,67 @@ function App() {
         onSelectPair={setCurrentPairIdx}
       />
 
-      <div className="flex-1 overflow-y-auto space-y-3 mb-3">
-        {messages.map((msg) => (
-          <ChatMessage key={msg.id} message={msg} />
-        ))}
-        {isTranslating && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-sapphire">Translation</span>
-            <div className="flex-1 h-px bg-surface0"></div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+      <main className="min-h-0 flex-1 overflow-y-auto px-6 py-8">
+        <div className="mx-auto flex max-w-2xl flex-col gap-7">
+          {messages.length === 0 && !isTranslating && (
+            <div className="select-none pt-16 text-center text-[13px] text-overlay0">
+              Type below to translate.
+            </div>
+          )}
+
+          {messages.map((message) => (
+            <ChatMessage key={message.id} message={message} />
+          ))}
+
+          {isTranslating && (
+            <div className="select-none text-[11px] uppercase tracking-[0.18em] text-overlay0">
+              translating…
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+      </main>
 
       <InputBox
         onSubmit={handleTranslate}
         disabled={isTranslating || !apiKey}
+        hasApiKey={!!apiKey}
       />
 
       {showSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-mantle rounded-lg p-6 w-96 border border-surface0">
-            <h2 className="text-xl font-bold mb-4 text-text">Settings</h2>
-            <label className="block mb-2 text-sm text-subtext1">OpenRouter API Key</label>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm select-none">
+          <div className="w-full max-w-md rounded-xl border border-white/[0.08] bg-mantle p-6 shadow-2xl shadow-black/40">
+            <div className="mb-4">
+              <h2 className="text-[15px] font-semibold tracking-tight text-text">
+                OpenRouter API Key
+              </h2>
+              <p className="mt-1 text-[12px] text-overlay1">
+                Stored locally in your config file.
+              </p>
+            </div>
+
             <input
               type="password"
-              className="w-full px-3 py-2 bg-surface0 text-text placeholder-overlay0 rounded border border-surface1 focus:outline-none focus:border-blue mb-4"
+              className="mb-5 w-full select-text rounded-md border border-white/[0.08] bg-base px-3 py-2 text-[13px] text-text outline-none transition placeholder:text-overlay0 focus:border-orange/60"
               value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(event) => setApiKey(event.target.value)}
               placeholder="sk-or-..."
+              autoFocus
             />
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleSaveApiKey(apiKey)}
-                className="flex-1 bg-blue hover:bg-sapphire px-4 py-2 rounded transition text-base"
-              >
-                Save
-              </button>
+
+            <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowSettings(false)}
-                className="flex-1 bg-surface0 hover:bg-surface1 px-4 py-2 rounded transition text-text"
+                className="rounded-md px-3 py-1.5 text-[12px] text-overlay1 transition hover:bg-white/[0.06] hover:text-text"
               >
                 Cancel
+              </button>
+              <button
+                onClick={() => handleSaveApiKey(apiKey)}
+                className="rounded-md bg-orange px-3 py-1.5 text-[12px] font-medium text-black transition hover:bg-orange-soft"
+              >
+                Save
               </button>
             </div>
           </div>

@@ -1,49 +1,67 @@
-import { useState } from 'react'
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { useState } from "react";
 
 interface Message {
-  type: 'user' | 'assistant'
-  text: string
-  id: number
+  type: "user" | "assistant";
+  text: string;
+  id: number;
 }
 
 interface ChatMessageProps {
-  message: Message
+  message: Message;
 }
 
 export default function ChatMessage({ message }: ChatMessageProps) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState(false);
+  const isUser = message.type === "user";
 
   const handleCopy = async () => {
+    if (window.getSelection()?.toString()) return;
     try {
-      await navigator.clipboard.writeText(message.text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(message.text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
     } catch (error) {
-      console.error('Failed to copy:', error)
+      console.error("Failed to copy:", error);
     }
-  }
+  };
 
-  const isUser = message.type === 'user'
+  const label = copied ? "copied" : isUser ? "source" : "translation";
+  const labelTone = isUser
+    ? copied
+      ? "text-green/85"
+      : "text-overlay0"
+    : copied
+      ? "text-green/85"
+      : "text-orange/85";
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-1">
-        <span className={`text-sm ${isUser ? 'text-peach' : 'text-sapphire'}`}>
-          {isUser ? 'You' : 'Translation'}
-        </span>
-        <div className="flex-1 h-px bg-surface0"></div>
-      </div>
+    <section className="space-y-1.5">
       <div
-        onClick={handleCopy}
-        className={`relative px-2 py-1 cursor-pointer transition ${
-          copied ? 'bg-surface1' : 'hover:bg-surface0'
-        }`}
+        className={`select-none text-[10px] uppercase tracking-[0.18em] transition ${labelTone}`}
       >
-        <div className="whitespace-pre-wrap break-words">{message.text}</div>
-        {copied && (
-          <span className="text-xs text-green ml-2">📋</span>
-        )}
+        {label}
       </div>
-    </div>
-  )
+      {isUser ? (
+        <div
+          onClick={handleCopy}
+          title="Click to copy"
+          className="select-text whitespace-pre-wrap break-words text-[14px] leading-7 text-overlay2"
+        >
+          {message.text}
+        </div>
+      ) : (
+        <div
+          onClick={handleCopy}
+          title="Click to copy"
+          className="markdown-body select-text text-[16px] leading-8 text-text"
+        >
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {message.text}
+          </ReactMarkdown>
+        </div>
+      )}
+    </section>
+  );
 }

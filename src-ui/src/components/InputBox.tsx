@@ -1,41 +1,58 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 interface InputBoxProps {
-  onSubmit: (text: string) => void
-  disabled: boolean
+  onSubmit: (text: string) => void;
+  disabled: boolean;
+  hasApiKey: boolean;
 }
 
-export default function InputBox({ onSubmit, disabled }: InputBoxProps) {
-  const [input, setInput] = useState('')
+export default function InputBox({
+  onSubmit,
+  disabled,
+  hasApiKey,
+}: InputBoxProps) {
+  const [input, setInput] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
 
   const handleSubmit = () => {
-    if (!input.trim() || disabled) return
-    onSubmit(input)
-    setInput('')
-  }
+    if (!input.trim() || disabled) return;
+    onSubmit(input);
+    setInput("");
+  };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit()
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      handleSubmit();
     }
-  }
+  };
 
   return (
-    <div className="border-t border-surface0 pt-3">
-      <div className="flex gap-2 items-start mb-2">
-        <span className={`${input ? 'text-sapphire' : 'text-overlay0'} select-none`}>│</span>
+    <footer className="shrink-0 border-t border-white/[0.06] bg-base px-6 pb-4 pt-3">
+      <div className="mx-auto max-w-2xl">
         <textarea
+          ref={textareaRef}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(event) => setInput(event.target.value)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          placeholder="Type your text here..."
-          className="flex-1 bg-transparent text-text placeholder-overlay0 resize-none focus:outline-none border-none"
-          rows={3}
+          placeholder={
+            hasApiKey
+              ? "Type or paste text"
+              : "Add an OpenRouter API key in Settings"
+          }
+          className="block max-h-72 w-full resize-none select-text overflow-y-auto bg-transparent text-[14px] leading-7 text-text placeholder:text-overlay0 focus:outline-none disabled:cursor-not-allowed"
+          rows={1}
           autoFocus
         />
       </div>
-    </div>
-  )
+    </footer>
+  );
 }
