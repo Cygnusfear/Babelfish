@@ -1,84 +1,46 @@
-# 🐠 Babelfish
+<p align="center">
+  <img src="assets/banner.png" width="720" />
+</p>
 
-A blazing-fast TUI translator powered by Gemini Flash 2.5 via OpenRouter, built with Rust and Ratatui.
+<h1 align="center">Babelfish</h1>
 
-Full rewrite from Go/Bubbletea to pure Rust with async, proper error handling, and improved performance.
+<p align="center">
+  Native macOS translator. Powered by OpenRouter.<br>
+  Pick any model, write your own prompt, swap language pairs in one config file.
+</p>
 
-## Quick Start
+## Install
 
 ```bash
-# Enter dev environment
 nix develop
-
-# Create .env file
-cp .env.example .env
-# Edit .env and add your OPENROUTER_API_KEY
-
-# Run
-cargo run
-
-# Run with hot reload
-cargo watch -x run
-
-# Build release binary
-cargo build --release
-./target/release/babelfish
+cargo tauri build --bundles app
+cp -r target/release/bundle/macos/Babelfish.app /Applications/
 ```
 
-## Features
+Open Babelfish and paste your OpenRouter API key in Settings.
 
-- **Blazing fast**: Native Rust performance with async I/O
-- **Clean async**: Tokio-based event loop with proper error handling
-- **Markdown prompts**: Load translation rules from `prompts/*.md` files
-- **Beautiful UI**: Tab-based language pair selection, scrollable chat
-- **Keyboard shortcuts**: Enter to translate, Tab to switch pairs, Ctrl+L to clear
-- **Single binary**: No runtime dependencies, just compile and run
+## Configure
 
-## Keyboard Shortcuts
+Edit `~/Library/Application Support/babelfish/config.json`. Changes reload on the next translation — no restart.
 
-| Key | Action |
-|-----|--------|
-| Enter | Submit translation |
-| Tab | Switch language pair |
-| Ctrl+C | Clear input (or quit if empty) |
-| Esc | Clear input |
-| Ctrl+L | Clear chat history |
-| Up/Down | Scroll chat |
-| PageUp/PageDown | Scroll chat (fast) |
-
-## Project Structure
-
-```
-.
-├── src/
-│   ├── main.rs        # Entry point, event loop
-│   ├── model.rs       # Application state
-│   ├── update.rs      # Message types
-│   ├── ui.rs          # Rendering logic
-│   ├── translator.rs  # OpenRouter API client
-│   └── prompts.rs     # Prompt loader
-├── prompts/
-│   ├── es-en.md       # Spanish ↔ English
-│   └── pt-en.md       # Portuguese ↔ English
-├── Cargo.toml         # Rust dependencies
-├── flake.nix          # Nix dev environment
-└── .env               # API keys (gitignored)
+```json
+{
+  "api_key": "sk-or-...",
+  "model": "zai-code/glm-5.1",
+  "prompt_template": "Translate from ${from_lang} to ${to_lang}. Output only the translation.",
+  "language_pairs": [
+    { "name": "es_en", "label": "ES ↔ EN", "from_lang": "Spanish", "to_lang": "English" },
+    { "name": "pt_en", "label": "PT ↔ EN", "from_lang": "Portuguese", "to_lang": "English" }
+  ]
+}
 ```
 
-## Architecture
+`${from_lang}` and `${to_lang}` get replaced per language pair before the prompt is sent.
 
-Event-driven async TUI:
-- **Model**: Application state (language pair, messages, scroll position)
-- **Event Loop**: tokio::select! handling keyboard and async messages
-- **UI Rendering**: Ratatui rendering from state
-- **Async Tasks**: tokio::spawn for API calls with mpsc channel communication
+## Shortcuts
 
-## Dependencies
-
-- **ratatui**: Terminal UI framework
-- **crossterm**: Cross-platform terminal manipulation
-- **tokio**: Async runtime
-- **reqwest**: HTTP client
-- **serde**: Serialization
-- **dotenvy**: Environment variables
-- **anyhow**: Error handling
+| Key             | Action      |
+| --------------- | ----------- |
+| Enter           | Translate   |
+| Shift+Enter     | New line    |
+| Click on text   | Copy        |
