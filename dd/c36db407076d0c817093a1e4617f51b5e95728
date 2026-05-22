@@ -1,0 +1,19 @@
+src/translator.rs
+  s_695990df80ed9f::t_1323d3eeb36d13 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "ddc36db407076d0c817093a1e4617f51b5e95728",
+  "prompts": {},
+  "sessions": {
+    "s_695990df80ed9f": {
+      "agent_id": {
+        "tool": "Nabila Singularity Paczyński",
+        "id": "019df87c-0696-7512-b868-9f6c96c33ad3",
+        "model": "anthropic/claude-opus-4-7"
+      },
+      "human_author": "Alexander Mangel <cygnusfear@gmail.com>"
+    }
+  }
+}
