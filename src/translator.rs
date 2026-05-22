@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 const OPENROUTER_URL: &str = "https://openrouter.ai/api/v1/chat/completions";
-const APP_REFERER: &str = "https://github.com/cygnusfear/babeltauri";
+const APP_REFERER: &str = "https://github.com/Cygnusfear/Babelfish";
 const APP_TITLE: &str = "Babelfish";
 
 #[derive(Serialize)]
