@@ -1,0 +1,35 @@
+README.md
+  72dc98197a520ea5 26-29,31,34-35
+  s_695990df80ed9f::t_773f71e9137776 1-3,5,7-10,12,16-17,20,22,24,30,32-33,38,40,42-46
+LICENSE
+  s_695990df80ed9f::t_ebd719396db427 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "c3f8c0c17b5927d3c8a8447f157c5816b700087b",
+  "prompts": {
+    "72dc98197a520ea5": {
+      "agent_id": {
+        "tool": "Allison Titan Seager",
+        "id": "019df87c-0696-7512-b868-9f6c96c33ad3",
+        "model": "openai-codex/gpt-5.5"
+      },
+      "human_author": "Alexander Mangel <cygnusfear@gmail.com>",
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 14,
+      "overriden_lines": 0
+    }
+  },
+  "sessions": {
+    "s_695990df80ed9f": {
+      "agent_id": {
+        "tool": "Nabila Singularity Paczyński",
+        "id": "019df87c-0696-7512-b868-9f6c96c33ad3",
+        "model": "anthropic/claude-opus-4-7"
+      },
+      "human_author": "Alexander Mangel <cygnusfear@gmail.com>"
+    }
+  }
+}
